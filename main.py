@@ -1,28 +1,43 @@
 import numpy as np
 import cv2
+import matplotlib.pyplot as plt
 
-hog = cv2.HOGDescriptor()
-hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+points = []
+bound = False
 
-cap = cv2.VideoCapture('/home/orimiller/Downloads/JunctionQMUL.avi')
 
-while(cap.isOpened()):
+def addpoint(event, x, y, flags, params):
+    if event == cv2.EVENT_LBUTTONDOWN:
+        points.append((x, y))
+
+
+cap = cv2.VideoCapture(0)
+
+cv2.namedWindow("polyim")
+cv2.setMouseCallback("polyim", addpoint)
+
+while cap.isOpened():
     ret, frame = cap.read()
 
-    gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+    scale_percent = 35  # percent of original size
+    width = int(frame.shape[1] * scale_percent / 100)
+    height = int(frame.shape[0] * scale_percent / 100)
+    dim = (width, height)
+    resized = cv2.resize(frame, dim)
 
-    boxes, weights = hog.detectMultiScale(gray, winStride=(8, 8))
+    npts = np.array(points)
+    polyim = cv2.polylines(resized, [npts], True, (255, 0, 0))
+    cv2.imshow("polyim", polyim)
+    for p in points:
+        cv2.circle(polyim, p, 3, (255, 0, 0))
 
-    boxes = np.array([[x, y, x + w, y + h] for (x, y, w, h) in boxes])
 
-    for (xA, yA, xB, yB) in boxes:
-        # display the detected boxes in the colour picture
-        cv2.rectangle(frame, (xA, yA), (xB, yB),
-                      (0, 255, 0), 2)
+    key = cv2.waitKey(1)
+    if key == ord('s'):
+        cv2.waitKey()
 
-    cv2.imshow('frame', frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+    elif key == ord('q'):
+        break;
 
 cap.release()
 cv2.destroyAllWindows()
