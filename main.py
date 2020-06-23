@@ -1,14 +1,11 @@
 import numpy as np
 import cv2
-import matplotlib.pyplot as plt
 
-outputSize = 500
 inputPoints = []
-outputPoints = []
 blue = (255, 0, 0)
-ipts = np.array([])
 bound = False
-state = False
+outputWidth = 0
+outputHeight = 0
 
 
 def addpoint(event, x, y, flags, params):
@@ -24,7 +21,7 @@ cv2.setMouseCallback("polyim", addpoint)
 while cap.isOpened():
     ret, frame = cap.read()
 
-    scale_percent = 35  # percent of original size
+    scale_percent = 50
     width = int(frame.shape[1] * scale_percent / 100)
     height = int(frame.shape[0] * scale_percent / 100)
     dim = (width, height)
@@ -33,34 +30,32 @@ while cap.isOpened():
     if bound:
         rows, cols, ch = resizedImg.shape
 
-        pts1 = np.float32(ipts)
-        pts2 = np.float32([[0, 0], [0, outputSize], [outputSize, outputSize], [outputSize, 0]])
+        pts1 = np.float32(np.float32(inputPoints))
+        pts2 = np.float32([[0, 0], [0, outputHeight], [outputWidth, outputHeight], [outputWidth, 0]])
 
         M = cv2.getPerspectiveTransform(pts1, pts2)
-        warpedImg = cv2.warpPerspective(resizedImg, M, (outputSize, outputSize))
+        warpedImg = cv2.warpPerspective(resizedImg, M, (outputWidth, outputHeight))
 
         cv2.imshow("Input", resizedImg)
         cv2.imshow("Output", warpedImg)
 
     else:
         cv2.putText(resizedImg, "Click 4 points counter clockwise from top left, Press 'S' when Done", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0))
-        ipts = np.array(inputPoints)
-        opts = np.array(outputPoints)
-        if not state:
-            polyim = cv2.polylines(resizedImg, [ipts], True, blue)
-            cv2.imshow("polyim", polyim)
-            for p in inputPoints:
-                cv2.circle(polyim, p, 3, blue)
-
-        else:
-            polyim = cv2.polylines(resizedImg, [opts], True, blue)
-            cv2.imshow("polyim", polyim)
-            for p in outputPoints:
-                cv2.circle(polyim, p, 3, blue)
+        polyim = cv2.polylines(resizedImg, [np.array(inputPoints)], True, blue)
+        cv2.imshow("polyim", polyim)
+        for p in inputPoints:
+            cv2.circle(polyim, p, 3, blue)
 
     key = cv2.waitKey(1)
     if key == ord('s'):
+        outputWidth = abs(inputPoints[2][0] - inputPoints[0][0])
+        outputHeight = abs(inputPoints[2][1] - inputPoints[0][1])
+        print("Input List")
         print(inputPoints)
+        print("Output Width")
+        print(outputWidth)
+        print("Output Height")
+        print(outputHeight)
         bound = True
         cv2.destroyWindow("polyim")
 
