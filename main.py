@@ -1,5 +1,9 @@
 import numpy as np
 import cv2
+from utils import ArducamUtils
+import array
+import fcntl
+import os
 
 inputPoints = []
 blue = (255, 0, 0)
@@ -12,21 +16,26 @@ def addpoint(event, x, y, flags, params):
     if event == cv2.EVENT_LBUTTONDOWN:
         inputPoints.append((x, y))
 
+def resize(frame, dst_width):
+    width = frame.shape[1]
+    height = frame.shape[0]
+    scale = dst_width * 1.0 / width
+    return cv2.resize(frame, (int(scale * width), int(scale * height)))
+    
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+
+arducam_utils = ArducamUtils(0)
+
+cap.set(cv2.CAP_PROP_CONVERT_RGB, arducam_utils.convert2rgb)
 
 cv2.namedWindow("polyim")
 cv2.setMouseCallback("polyim", addpoint)
 
 while cap.isOpened():
     ret, frame = cap.read()
-
-    scale_percent = 50
-    width = int(frame.shape[1] * scale_percent / 100)
-    height = int(frame.shape[0] * scale_percent / 100)
-    dim = (width, height)
-    resizedImg = cv2.resize(frame, dim)
-
+    frame = arducam_utils.convert(frame)
+    resizedImg = resize(frame, 1280.0)
     if bound:
         rows, cols, ch = resizedImg.shape
 
